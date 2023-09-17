@@ -1,0 +1,31 @@
+import pandas as pd
+import numpy as np
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.svm import SVR
+from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
+
+dataSet = pd.read_csv("o-ring-erosion-only.data", sep=" ")
+X = dataSet.iloc[:, :-1].values
+y = dataSet.iloc[:, -1].values
+y = y.reshape(-1, 1)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+sc_X = StandardScaler()
+sc_y = StandardScaler()
+X_train = sc_X.fit_transform(X_train)
+X_test = sc_X.transform(X_test)
+y_train = sc_y.fit_transform(y_train)
+
+regressor = SVR(kernel="rbf")
+regressor.fit(X_train, y_train.ravel())
+
+y_pred = sc_y.inverse_transform(regressor.predict(X_test).reshape(-1, 1))
+
+cv_score = cross_val_score(regressor, X_train, y_train.ravel(), cv=5)
+
+print(r2_score(y_test, y_pred))
+print(np.sqrt(mean_squared_error(y_test, y_pred)))
+print(mean_absolute_error(y_test, y_pred))
+print(np.mean(cv_score))
